@@ -1,3 +1,5 @@
+using OfficeOpenXml;
+
 namespace Grid_Reconcile
 {
     internal static class Program
@@ -11,6 +13,7 @@ namespace Grid_Reconcile
             // To customize application configuration such as set high DPI settings or default font,
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
+            ExcelPackage.License.SetNonCommercialPersonal(Environment.UserName);
             Application.Run(new MainForm());
         }
     }

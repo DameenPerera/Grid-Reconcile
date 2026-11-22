@@ -177,6 +177,7 @@
             butStart.TabIndex = 8;
             butStart.Text = "Start";
             butStart.UseVisualStyleBackColor = false;
+            butStart.Click += butStart_Click;
             // 
             // panResults
             // 
@@ -185,10 +186,12 @@
             panResults.Controls.Add(panel6);
             panResults.Controls.Add(panel5);
             panResults.Controls.Add(panel4);
-            panResults.Location = new Point(521, 148);
+            panResults.Dock = DockStyle.Fill;
+            panResults.Location = new Point(0, 0);
             panResults.Name = "panResults";
-            panResults.Size = new Size(251, 178);
+            panResults.Size = new Size(800, 527);
             panResults.TabIndex = 9;
+            panResults.Visible = false;
             // 
             // dgvResults
             // 
@@ -196,15 +199,15 @@
             dgvResults.Dock = DockStyle.Fill;
             dgvResults.Location = new Point(10, 10);
             dgvResults.Name = "dgvResults";
-            dgvResults.Size = new Size(231, 158);
+            dgvResults.Size = new Size(780, 507);
             dgvResults.TabIndex = 4;
             // 
             // panel7
             // 
             panel7.Dock = DockStyle.Right;
-            panel7.Location = new Point(241, 10);
+            panel7.Location = new Point(790, 10);
             panel7.Name = "panel7";
-            panel7.Size = new Size(10, 158);
+            panel7.Size = new Size(10, 507);
             panel7.TabIndex = 3;
             // 
             // panel6
@@ -212,15 +215,15 @@
             panel6.Dock = DockStyle.Left;
             panel6.Location = new Point(0, 10);
             panel6.Name = "panel6";
-            panel6.Size = new Size(10, 158);
+            panel6.Size = new Size(10, 507);
             panel6.TabIndex = 2;
             // 
             // panel5
             // 
             panel5.Dock = DockStyle.Bottom;
-            panel5.Location = new Point(0, 168);
+            panel5.Location = new Point(0, 517);
             panel5.Name = "panel5";
-            panel5.Size = new Size(251, 10);
+            panel5.Size = new Size(800, 10);
             panel5.TabIndex = 1;
             // 
             // panel4
@@ -228,7 +231,7 @@
             panel4.Dock = DockStyle.Top;
             panel4.Location = new Point(0, 0);
             panel4.Name = "panel4";
-            panel4.Size = new Size(251, 10);
+            panel4.Size = new Size(800, 10);
             panel4.TabIndex = 0;
             // 
             // MainForm
