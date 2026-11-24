@@ -201,6 +201,7 @@
             dgvResults.Name = "dgvResults";
             dgvResults.Size = new Size(780, 507);
             dgvResults.TabIndex = 4;
+            dgvResults.Visible = false;
             // 
             // panel7
             // 

@@ -50,7 +50,6 @@ namespace Grid_Reconcile.Services
                         AccName = c4,
                         AccAmount = ParseDecimal(c5),
                         Narration = c6,
-                        BankRealizedDate = ParseDate(c6),
                         UserName = c7
                     };
                     rows.Add(summary);
@@ -66,22 +65,6 @@ namespace Grid_Reconcile.Services
             s = s.Replace(",", "").Trim();
             return decimal.TryParse(s, NumberStyles.Any,
                                     CultureInfo.InvariantCulture, out var v) ? v : 0m;
-        }
-
-        private static DateTime? ParseDate(string s)
-        {
-            if (string.IsNullOrWhiteSpace(s)) return null;
-
-            s = s.Substring(s.IndexOf(':') + 1);
-
-            // summary files use yyyy/MM/dd format
-            if (DateTime.TryParseExact(s.Trim(), "yyyy/MM/dd",
-                    CultureInfo.InvariantCulture, DateTimeStyles.None, out var d1))
-                return d1;
-
-            // Fallback (also covers real Excel date cells where .Text already formatted)
-            return DateTime.TryParse(s, CultureInfo.InvariantCulture,
-                                     DateTimeStyles.None, out var d2) ? d2 : null;
         }
     }
 }

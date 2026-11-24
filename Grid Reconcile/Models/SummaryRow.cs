@@ -13,7 +13,6 @@ namespace Grid_Reconcile.Models
         public string AccName { get; set; } = "";
         public decimal AccAmount { get; set; }
         public string Narration { get; set; } = "";
-        public DateTime? BankRealizedDate { get; set; }
         public string UserName { get; set; } = "";
     }
 }

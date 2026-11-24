@@ -5,8 +5,8 @@ namespace Grid_Reconcile
 {
     public partial class MainForm : Form
     {
-        List<InstructionRow>? instructionRows = new List<InstructionRow>();
-        List<SummaryRow>? summaryRows = new List<SummaryRow>();
+        List<InstructionRow> instructionRows = new List<InstructionRow>();
+        List<SummaryRow> summaryRows = new List<SummaryRow>();
 
         List<ReconcileResults> reconcileResults = new List<ReconcileResults>();
         public MainForm()
@@ -25,6 +25,7 @@ namespace Grid_Reconcile
 
                     try
                     {
+                        instructionRows.Clear();
                         instructionRows = Services.InstructionReader.ReadInstructions(openDialog.FileName);
                     }
                     catch (Exception ex)
@@ -50,6 +51,7 @@ namespace Grid_Reconcile
 
                     try
                     {
+                        summaryRows.Clear();
                         summaryRows = Services.SummaryReader.ReadSummary(openDialog.FileName);
                     }
                     catch (Exception ex)
@@ -113,103 +115,33 @@ namespace Grid_Reconcile
                 return;
             }
             panResults.Visible = true;
+            reconcileResults.Clear();
+            _results.RaiseListChangedEvents = false;
+            _results.Clear();
+
+            var summaryByRefno = new Dictionary<string, List<SummaryRow>>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var summary in summaryRows)
+            {
+                string key = summary.RefNo.Trim();
+                if (string.IsNullOrEmpty(key)) continue;
+
+                if (!summaryByRefno.TryGetValue(key, out var list))
+                {
+                    list = new List<SummaryRow>();
+                    summaryByRefno[key] = list;
+                }
+                list.Add(summary);
+            }
+
             foreach (var instruction in instructionRows)
             {
-                bool matched = false;
-                foreach (var summary in summaryRows)
-                {
-                    if (instruction.RefNo == summary.RefNo)
-                    {
-                        matched = true;
-                        if (instruction.Amount != summary.AccAmount && instruction.DepositedBank != summary.AccName)
-                        {
-                            ReconcileResults result = new ReconcileResults
-                            {
-                                SheetName = instruction.SheetName,
-                                RowNumber = instruction.RowNumber,
-                                EmailDate = instruction.EmailDate,
-                                RefNo = instruction.RefNo,
-                                CustomerOrGlNarration = instruction.CustomerOrGlNarration,
-                                Amount = instruction.Amount,
-                                PaymentMethod = instruction.PaymentMethod,
-                                BankRealizedDate = instruction.BankRealizedDate,
-                                DepositedBank = instruction.DepositedBank,
-                                SummeryRowNumber = summary.RowNumber,
-                                EnteredBlockType = summary.BlockType,
-                                EnteredTxnNo = summary.TxnNo,
-                                EnteredRefNo = summary.RefNo,
-                                EnteredAccName = summary.AccName,
-                                EnteredAccAmount = summary.AccAmount,
-                                EnteredNarration = summary.Narration,
-                                EnteredBankRealizedDate = summary.BankRealizedDate,
-                                EnteredUserName = summary.UserName,
-                                Error = "Wrong Amount and Bank"
-                            };
-                            reconcileResults?.Add(result);
-                            break;
-                        }
-                        else if (instruction.Amount != summary.AccAmount && instruction.DepositedBank == summary.AccName)
-                        {
-                            ReconcileResults result = new ReconcileResults
-                            {
-                                SheetName = instruction.SheetName,
-                                RowNumber = instruction.RowNumber,
-                                EmailDate = instruction.EmailDate,
-                                RefNo = instruction.RefNo,
-                                CustomerOrGlNarration = instruction.CustomerOrGlNarration,
-                                Amount = instruction.Amount,
-                                PaymentMethod = instruction.PaymentMethod,
-                                BankRealizedDate = instruction.BankRealizedDate,
-                                DepositedBank = instruction.DepositedBank,
-                                SummeryRowNumber = summary.RowNumber,
-                                EnteredBlockType = summary.BlockType,
-                                EnteredTxnNo = summary.TxnNo,
-                                EnteredRefNo = summary.RefNo,
-                                EnteredAccName = summary.AccName,
-                                EnteredAccAmount = summary.AccAmount,
-                                EnteredNarration = summary.Narration,
-                                EnteredBankRealizedDate = summary.BankRealizedDate,
-                                EnteredUserName = summary.UserName,
-                                Error = "Wrong Amount"
-                            };
-                            reconcileResults?.Add(result);
-                            break;
-                        }
-                        else if (instruction.Amount == summary.AccAmount && instruction.DepositedBank != summary.AccName)
-                        {
-                            ReconcileResults result = new ReconcileResults
-                            {
-                                SheetName = instruction.SheetName,
-                                RowNumber = instruction.RowNumber,
-                                EmailDate = instruction.EmailDate,
-                                RefNo = instruction.RefNo,
-                                CustomerOrGlNarration = instruction.CustomerOrGlNarration,
-                                Amount = instruction.Amount,
-                                PaymentMethod = instruction.PaymentMethod,
-                                BankRealizedDate = instruction.BankRealizedDate,
-                                DepositedBank = instruction.DepositedBank,
-                                SummeryRowNumber = summary.RowNumber,
-                                EnteredBlockType = summary.BlockType,
-                                EnteredTxnNo = summary.TxnNo,
-                                EnteredRefNo = summary.RefNo,
-                                EnteredAccName = summary.AccName,
-                                EnteredAccAmount = summary.AccAmount,
-                                EnteredNarration = summary.Narration,
-                                EnteredBankRealizedDate = summary.BankRealizedDate,
-                                EnteredUserName = summary.UserName,
-                                Error = "Wrong Bank"
-                            };
-                            reconcileResults?.Add(result);
-                            break;
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                }
-                
-                if (!matched)
+                string key = instruction.RefNo.Trim();
+                List<SummaryRow>? matches = new List<SummaryRow>();
+                if (!string.IsNullOrEmpty(key))
+                    summaryByRefno.TryGetValue(key, out matches);
+
+                if (matches == null || matches.Count == 0)
                 {
                     ReconcileResults result = new ReconcileResults
                     {
@@ -229,23 +161,62 @@ namespace Grid_Reconcile
                         EnteredAccName = "",
                         EnteredAccAmount = 0,
                         EnteredNarration = "",
-                        EnteredBankRealizedDate = null,
                         EnteredUserName = "",
                         Error = "Receipt not found"
+                    };
+                    reconcileResults?.Add(result);
+                    continue;
+                }
+
+                foreach (var summary in matches)
+                {
+                    string error = "";
+
+                    if (instruction.Amount != summary.AccAmount && !areBanksMatch(instruction.DepositedBank, summary.AccName))
+                    {
+                        error = "Amount and Bank are wrong";
+                    }
+                    else if (instruction.Amount != summary.AccAmount && areBanksMatch(instruction.DepositedBank, summary.AccName))
+                    {
+                        error = "Amount is wrong";
+                    }
+                    else if (instruction.Amount == summary.AccAmount && !areBanksMatch(instruction.DepositedBank, summary.AccName))
+                    {
+                        error = "Bank is wrong";
+                    }
+
+                    ReconcileResults result = new ReconcileResults
+                    {
+                        SheetName = instruction.SheetName,
+                        RowNumber = instruction.RowNumber,
+                        EmailDate = instruction.EmailDate,
+                        RefNo = instruction.RefNo,
+                        CustomerOrGlNarration = instruction.CustomerOrGlNarration,
+                        Amount = instruction.Amount,
+                        PaymentMethod = instruction.PaymentMethod,
+                        BankRealizedDate = instruction.BankRealizedDate,
+                        DepositedBank = instruction.DepositedBank,
+                        SummeryRowNumber = summary.RowNumber,
+                        EnteredBlockType = summary.BlockType,
+                        EnteredTxnNo = summary.TxnNo,
+                        EnteredRefNo = summary.RefNo,
+                        EnteredAccName = summary.AccName,
+                        EnteredAccAmount = summary.AccAmount,
+                        EnteredNarration = summary.Narration,
+                        EnteredUserName = summary.UserName,
+                        Error = error
                     };
                     reconcileResults?.Add(result);
                 }
             }
 
-            if (reconcileResults == null)
+            if (reconcileResults == null || reconcileResults.Count == 0)
             {
-                MessageBox.Show("No errors found", "Grid Reconcile", MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
             ConfigureGrid();
 
-            // 2) Bind
             dgvResults.DataSource = _results;
 
             _results.RaiseListChangedEvents = false;
@@ -254,7 +225,20 @@ namespace Grid_Reconcile
             _results.RaiseListChangedEvents = true;
             _results.ResetBindings();
 
+            panResults.Visible = true;
+            dgvResults.Visible = true;
             this.MaximizeBox = true;
+        }
+
+        private bool areBanksMatch(string instrcuionBank, string summaryBank)
+        {
+            if (string.IsNullOrWhiteSpace(instrcuionBank) || string.IsNullOrWhiteSpace(summaryBank))
+                return false;
+
+            instrcuionBank = instrcuionBank.Replace(" ", "").ToLowerInvariant();//Avoiding including more space then another
+            summaryBank = summaryBank.Replace(" ", "").ToLowerInvariant();//and upper case problem
+
+            return instrcuionBank == summaryBank;
         }
 
         private readonly BindingList<ReconcileResults> _results = new();
@@ -266,6 +250,17 @@ namespace Grid_Reconcile
             dgvResults.AllowUserToAddRows = false;
             dgvResults.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dgvResults.RowHeadersVisible = false;
+        }
+
+        private void goBack()
+        {
+            this.MaximizeBox = false;
+            this.WindowState = FormWindowState.Normal;
+            panResults.Visible = false;
+            instructionRows.Clear();
+            summaryRows.Clear();
+            reconcileResults.Clear();
+            _results.Clear();
         }
     }
 }

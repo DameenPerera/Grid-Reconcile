@@ -27,7 +27,6 @@ namespace Grid_Reconcile.Models
         public string EnteredAccName { get; set; } = "";
         public decimal EnteredAccAmount { get; set; }
         public string EnteredNarration { get; set; } = "";
-        public DateTime? EnteredBankRealizedDate { get; set; }
         public string EnteredUserName { get; set; } = "";
 
         //For Corrections
